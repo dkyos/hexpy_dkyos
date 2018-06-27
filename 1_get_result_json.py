@@ -58,17 +58,33 @@ for T in j_team['teams']:
             j_senti = monitor_client.sentiment_and_categories(M['id'], start, end)
             save_json(j_senti, ("./result_json/" + str(M['id']) + "_senti.json"))
 
-        j_volume = load_json("./result_json/" + str(M['id']) + "_volume.json")
-        if j_volume is None: 
-            # [HOURLY, DAILY, WEEKLY, MONTHLY]
-            j_volume = monitor_client.volume(M['id'], start, end, "HOURLY")
-            #j_volume = monitor_client.volume(M['id'], start, end, "DAILY")
-            #j_volume = monitor_client.volume(M['id'], start, end, "WEEKLY")
-            #j_volume = monitor_client.volume(M['id'], start, end, "MONTHLY")
-            save_json(j_volume, ("./result_json/" + str(M['id']) + "_volume.json"))
+        try:
+            j_volume = load_json("./result_json/" + str(M['id']) + "_volume.json")
+            if j_volume is None: 
+                # [HOURLY, DAILY, WEEKLY, MONTHLY]
+                j_volume = monitor_client.volume(M['id'], start, end, "DAILY")
+                save_json(j_volume, ("./result_json/" + str(M['id']) + "_volume.json"))
+        except Exception as e:
+            pass
 
-        raise SystemExit
+        for S in details['subfilters']:
+            print(S['id'], " : ", S['name'])
+            #print(S['id'], " : ", S['name'], " : ", S['parameters'])
+            j_senti = load_json("./result_json/" + str(M['id']) + "_" + str(S['id']) + "_senti.json")
+            if j_senti is None: 
+                j_senti = monitor_client.sentiment_and_categories(S['id'], start, end)
+                save_json(j_senti, ("./result_json/" + str(M['id']) + "_" + str(S['id']) + "_senti.json"))
 
+            try:
+                j_volume = load_json("./result_json/" + str(M['id']) + "_" + str(S['id'])+ "_volume.json")
+                if j_volume is None: 
+                    # [HOURLY, DAILY, WEEKLY, MONTHLY]
+                    j_volume = monitor_client.volume(S['id'], start, end, "DAILY")
+                    save_json(j_volume, ("./result_json/" + str(M['id']) + "_" + str(S['id']) + "_volume.json"))
+            except Exception as e:
+                pass
+
+        #raise SystemExit
 
 session.close()
 
