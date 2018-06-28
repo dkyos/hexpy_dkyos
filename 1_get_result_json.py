@@ -70,6 +70,10 @@ for T in j_team['teams']:
         for S in details['subfilters']:
             print(S['id'], " : ", S['name'])
             #print(S['id'], " : ", S['name'], " : ", S['parameters'])
+
+            if S['name'].strip() != '(심화) Senti':
+                continue
+
             j_senti = load_json("./result_json/" + str(M['id']) + "_" + str(S['id']) + "_senti.json")
             if j_senti is None: 
                 j_senti = monitor_client.sentiment_and_categories(S['id'], start, end)
