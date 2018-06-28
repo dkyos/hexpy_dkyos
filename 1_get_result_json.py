@@ -29,11 +29,20 @@ session = HexpySession.load_auth_from_file()
 metadata_client = MetadataAPI(session)
 monitor_client = MonitorAPI(session)
 
+
+j_countries = load_json("./meta_json/countries.json")
+if j_countries is None: 
+    j_countries = metadata_client.countries()
+    save_json(j_countries, "./meta_json/countries.json")
+    print(json.dumps(j_countries))
+
 j_team = load_json("./meta_json/team_list.json")
 if j_team is None: 
     j_team = metadata_client.team_list()
     save_json(j_team, "./meta_json/team_list.json")
     print(json.dumps(j_team))
+
+#raise SystemExit
 
 for T in j_team['teams']:
     print(T['id'], T['name'])
