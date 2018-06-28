@@ -73,13 +73,19 @@ for T in j_team['teams']:
         if Brand is "":
             continue
 
-        j_senti = load_json("./result_json/" + str(M['id']) + "_senti.json")
-        rows = []
+        j_detail = load_json("./result_json/" + str(M['id']) + "_details.json")
+        if j_detail is None: 
+            print ("Error")
+            raise SystemExit
+
         columns = ['monitor_id', "monitor_name"
             , 'brand', 'product', 'geo'
             , 'category', 'feature', 'source'
             , 'date', 'time', 'num'
             , 'positive', 'neutral', 'negative']
+
+        j_senti = load_json("./result_json/" + str(M['id']) + "_senti.json")
+        rows = []
         for S in j_senti['results']:
             for C in S['categories']:
                 if C['category'] == "Basic Positive":
@@ -93,19 +99,74 @@ for T in j_team['teams']:
             if len(tmp) >= 2:
                 Date = tmp[0].strip()
                 Time = tmp[1].strip()
+        
+            Source2=""
+            if Source is "":
+                Source2="Advanced"
+            else:
+                Source2=Source
 
             #print("%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d" % (M['id']
-            #    , Brand, Product, Geo, Category, Feature, Source
+            #    , Brand, Product, Geo, Category, Feature, Source2
             #    , Date, Time, S['numberOfDocuments']
             #    , positive, Neutral, Negative))
 
             rows.append([M['id'], M['name']
                 , Brand, Product, Geo
-                , Category, Feature, Source
+                , Category, Feature, Source2
                 , Date, Time, S['numberOfDocuments']
                 , positive, Neutral, Negative])
 
         df = pd.DataFrame(rows, columns=columns)
         print(df.head(3))
         save_csv(df, "./result_csv/" + str(M['id']) + "_senti.csv")
+
+
+        Subfilter_id = 0
+        for Subfilter in j_detail['subfilters']:
+            #print(Subfilter['id'], " : ", Subfilter['name'], " : ", Subfilter['parameters'])
+            if Subfilter['name'].strip() == '(심화) Senti':
+                Subfilter_id = Subfilter['id']
+                break
+
+        if Subfilter_id == 0:
+            continue
+
+        j_senti = load_json("./result_json/" + str(M['id']) + "_" + str(Subfilter_id) + "_senti.json")
+        rows = []
+        for S in j_senti['results']:
+            for C in S['categories']:
+                if C['category'] == "Basic Positive":
+                    positive = C['volume'];
+                elif C['category'] == "Basic Neutral":
+                    Neutral = C['volume'];
+                elif C['category'] == "Basic Negative":
+                    Negative = C['volume'];
+
+            tmp = re.split('T', S['startDate'])
+            if len(tmp) >= 2:
+                Date = tmp[0].strip()
+                Time = tmp[1].strip()
+        
+            Source2=""
+            if Source is "":
+                Source2="Basic"
+            else:
+                Source2=Source
+
+            #print("%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d" % (M['id']
+            #    , Brand, Product, Geo, Category, Feature, Source2
+            #    , Date, Time, S['numberOfDocuments']
+            #    , positive, Neutral, Negative))
+
+            rows.append([M['id'], M['name']
+                , Brand, Product, Geo
+                , Category, Feature, Source2
+                , Date, Time, S['numberOfDocuments']
+                , positive, Neutral, Negative])
+
+        df = pd.DataFrame(rows, columns=columns)
+        print(df.head(3))
+        save_csv(df, "./result_csv/" + str(M['id']) + "_" + str(Subfilter_id) + "_senti.csv")
+
 

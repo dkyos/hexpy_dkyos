@@ -8,6 +8,7 @@ alias 36penv='source activate py36'
 from hexpy import HexpySession, MonitorAPI, MetadataAPI
 from pathlib import Path
 import json
+import re
 
 def save_json(json_obj, path: str = None) -> None:
     save_path = Path(path)
@@ -34,13 +35,13 @@ j_countries = load_json("./meta_json/countries.json")
 if j_countries is None: 
     j_countries = metadata_client.countries()
     save_json(j_countries, "./meta_json/countries.json")
-    print(json.dumps(j_countries))
+    #print(json.dumps(j_countries))
 
 j_team = load_json("./meta_json/team_list.json")
 if j_team is None: 
     j_team = metadata_client.team_list()
     save_json(j_team, "./meta_json/team_list.json")
-    print(json.dumps(j_team))
+    #print(json.dumps(j_team))
 
 #raise SystemExit
 
@@ -53,13 +54,36 @@ for T in j_team['teams']:
         #print(json.dumps(j_monitor))
 
     for M in j_monitor['monitors']:
-        details = monitor_client.details(M['id'])
+        Brand = ""; 
+
+        tmp = re.split(': |- ', M['name'])
+        if len(tmp) >= 1:
+            for i, val in enumerate(tmp):
+                val = val.strip()
+                if val == 'Brand':
+                    Brand = tmp[i+1].strip()
+                    tmp2 = re.split(' ', Brand)
+                    if tmp2[len(tmp2)-1] == 'Product':
+                        Product = tmp[i+2].strip()
+                        Brand = ' '.join(Brand.split(' ')[:-1])
+                        Brand = Brand.strip()
+
+        #if Brand is not "":
+        #    print("%s" % (M['name']))
+        #    print("     => %s|%s|%s|%s|%s|%s|" % (Brand, Product, Geo, Category, Feature, Source))
+        #    print("")
+
+        if Brand is "":
+            print("SKIP [%s]" % (M['name']))
+            continue
+
         j_detail = load_json("./result_json/" + str(M['id']) + "_details.json")
         if j_detail is None: 
-            save_json(details, ("./result_json/" + str(M['id']) + "_details.json"))
+            j_detail = monitor_client.details(M['id'])
+            save_json(j_detail, ("./result_json/" + str(M['id']) + "_details.json"))
 
-        start = details["resultsStart"]
-        end = details["resultsEnd"]
+        start = j_detail["resultsStart"]
+        end = j_detail["resultsEnd"]
         print(T['id'], ": ", M['id'], start, end, M['name'])
         
         j_senti = load_json("./result_json/" + str(M['id']) + "_senti.json")
@@ -76,7 +100,7 @@ for T in j_team['teams']:
         except Exception as e:
             pass
 
-        for S in details['subfilters']:
+        for S in j_detail['subfilters']:
             print(S['id'], " : ", S['name'])
             #print(S['id'], " : ", S['name'], " : ", S['parameters'])
 
